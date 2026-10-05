@@ -323,19 +323,83 @@ export default function Home() {
       {isSkyPathModalOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center pointer-events-auto">
           <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={() => setIsSkyPathModalOpen(false)} />
-          <div className="glass-panel p-8 rounded-3xl w-[90vw] max-w-[800px] aspect-square max-h-[90vh] flex flex-col relative animate-in fade-in zoom-in duration-300">
+          <div className="glass-panel p-8 rounded-3xl w-[95vw] max-w-[1100px] h-[85vh] flex flex-col relative animate-in fade-in zoom-in duration-300">
             <button 
               onClick={() => setIsSkyPathModalOpen(false)}
               className="absolute top-6 right-6 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white/70 hover:text-white transition-colors z-50"
             >
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
             </button>
-            <div className="mb-4 text-center">
-              <h2 className="text-xl font-heading font-semibold text-white tracking-wide">High-Resolution Sky Path</h2>
+
+            <div className="mb-8 border-b border-white/10 pb-4">
+              <h2 className="text-2xl font-heading font-semibold text-white tracking-wide">High-Resolution Sky Path</h2>
               <p className="text-xs font-mono text-white/40 uppercase tracking-widest mt-1">Observer: {activeMission.mission}</p>
             </div>
-            <div className="flex-1 w-full h-full relative">
-              <PolarPlot mission={activeMission} />
+
+            <div className="flex-1 w-full h-full flex gap-8 overflow-hidden">
+              {/* Left Column: Data HUD */}
+              <div className="w-[340px] flex-shrink-0 flex flex-col gap-5 overflow-y-auto scrollbar-none pr-2">
+                <div className="glass-panel-light p-5 rounded-2xl border border-white/10 bg-black/40 backdrop-blur-md">
+                  <div className="text-[10px] font-mono uppercase tracking-[0.2em] text-sky-400 mb-4 flex items-center gap-2">
+                    <span className="w-1.5 h-1.5 rounded-full bg-sky-400 animate-pulse" /> Telemetry Data
+                  </div>
+                  <div className="flex flex-col gap-4">
+                    <div className="flex justify-between items-center border-b border-white/5 pb-2">
+                      <span className="text-[10px] font-mono text-slate-500 uppercase tracking-widest">Coordinates</span>
+                      <span className="text-xs text-white font-mono">{activeMission.lat_deg.toFixed(4)}°, {activeMission.lon_east_deg.toFixed(4)}°</span>
+                    </div>
+                    <div className="flex justify-between items-center border-b border-white/5 pb-2">
+                      <span className="text-[10px] font-mono text-slate-500 uppercase tracking-widest">Site Name</span>
+                      <span className="text-xs text-white text-right max-w-[150px] truncate">{activeMission.site_name}</span>
+                    </div>
+                    <div className="flex justify-between items-center border-b border-white/5 pb-2">
+                      <span className="text-[10px] font-mono text-slate-500 uppercase tracking-widest">Landing Date</span>
+                      <span className="text-xs text-white font-mono">{activeMission.landing_utc.split('T')[0]}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-[10px] font-mono text-slate-500 uppercase tracking-widest">Ops Duration</span>
+                      <span className="text-xs text-white">{activeMission.ops_duration}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="glass-panel-light p-5 rounded-2xl border border-white/10 bg-black/40 backdrop-blur-md">
+                  <div className="text-[10px] font-mono uppercase tracking-[0.2em] text-white/50 mb-4">Live Status Array</div>
+                  <div className="flex flex-col gap-3">
+                    <div className="flex justify-between items-center">
+                      <span className="text-[10px] font-mono text-slate-400 uppercase tracking-widest">Provider</span>
+                      <span className="text-xs text-white font-semibold">{activeMission.provider}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-[10px] font-mono text-slate-400 uppercase tracking-widest">Mission Era</span>
+                      <span className="text-xs text-amber-400 font-mono">{activeMission.era}</span>
+                    </div>
+                    <div className="flex justify-between items-center mt-2 pt-3 border-t border-white/5">
+                      <span className="text-[10px] font-mono text-slate-400 uppercase tracking-widest">Earth Link</span>
+                      <span className={`text-[10px] font-mono px-2 py-0.5 rounded ${Math.abs(activeMission.lon_east_deg) <= 90 ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-red-500/20 text-red-400 border border-red-500/30'}`}>
+                        {Math.abs(activeMission.lon_east_deg) <= 90 ? 'NOMINAL' : 'BLACKOUT'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="glass-panel-light p-5 rounded-2xl border border-white/10 bg-black/40 backdrop-blur-md">
+                  <div className="text-[10px] font-mono uppercase tracking-[0.2em] text-emerald-400 mb-3 flex items-center gap-2">
+                     Payloads
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {activeMission.payloads?.map((p, i) => (
+                      <span key={i} className="px-2 py-1 rounded bg-white/5 border border-white/10 text-[10px] text-slate-300 font-mono">{p}</span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Right Column: Unobstructed Polar Plot */}
+              <div className="flex-1 h-full w-full relative flex items-center justify-center bg-black/20 rounded-2xl border border-white/5 p-4">
+                <PolarPlot mission={activeMission} />
+              </div>
+
             </div>
           </div>
         </div>
