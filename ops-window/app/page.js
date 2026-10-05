@@ -274,19 +274,46 @@ export default function Home() {
             >
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
             </button>
-            <div className="mb-4 text-center">
-              <h2 className="text-xl font-heading font-semibold text-white tracking-wide">60-Day Historical Window Analysis</h2>
+            <div className="mb-6">
+              <h2 className="text-2xl font-heading font-semibold text-white tracking-wide">60-Day Historical Window Analysis</h2>
               <p className="text-xs font-mono text-white/40 uppercase tracking-widest mt-1">Fleet Overview</p>
             </div>
-            <div className="flex-1 w-full h-full relative overflow-hidden">
-              <Timeline 
-                missions={missions} 
-                selectedId={activeId} 
-                onSelect={setActiveId} 
-                timelineStartMs={timelineStartMs}
-                simulatedTime={simulatedTime}
-                durationHours={timelineDurationHours}
-              />
+            <div className="flex-1 w-full h-full flex gap-8 overflow-hidden">
+              <div className="flex-1 min-w-0 h-full relative">
+                <Timeline 
+                  missions={missions} 
+                  selectedId={activeId} 
+                  onSelect={setActiveId} 
+                  timelineStartMs={timelineStartMs}
+                  simulatedTime={simulatedTime}
+                  durationHours={timelineDurationHours}
+                />
+              </div>
+              <div className="w-[320px] flex-shrink-0 flex flex-col gap-6 border-l border-white/10 pl-8 overflow-y-auto scrollbar-none pb-4">
+                <div>
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className={`px-2 py-1 text-[9px] font-mono font-bold uppercase tracking-widest rounded border ${activeMission.status === 'success' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-amber-500/10 text-amber-400 border-amber-500/20'}`}>
+                      {activeMission.status}
+                    </span>
+                  </div>
+                  <h3 className="text-xl font-heading font-semibold text-white">{activeMission.mission}</h3>
+                  <p className="text-xs text-slate-400 mt-1">{activeMission.site_name}</p>
+                </div>
+                
+                <div className="flex justify-between items-end pb-4 border-b border-white/5">
+                  <div className="text-[10px] font-mono uppercase tracking-widest text-slate-500">Ops Efficiency</div>
+                  <div className="text-2xl font-mono font-medium text-sky-400 tracking-tighter">
+                    {metrics.opsEfficiency.toFixed(1)}%
+                  </div>
+                </div>
+
+                <div className="flex-1 min-h-[300px] w-full relative flex flex-col items-center justify-center">
+                  <div className="absolute top-0 left-0 text-[10px] font-mono uppercase tracking-[0.2em] text-white/40 w-full text-center">Sky Path Overlay</div>
+                  <div className="w-full h-full mt-6">
+                    <PolarPlot mission={activeMission} />
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
