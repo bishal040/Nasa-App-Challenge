@@ -6,6 +6,7 @@
     color: #f8fafc;
     font-family: 'Inter', sans-serif;
     -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
   h1, h2, h3, h4, h5, h6, .font-heading {
     font-family: 'Space Grotesk', sans-serif;
@@ -14,11 +15,14 @@
 
 @layer utilities {
   .glass-panel {
-    background: rgba(8, 12, 17, 0.75);
-    backdrop-filter: blur(20px) saturate(150%);
-    -webkit-backdrop-filter: blur(20px) saturate(150%);
+    background: rgba(8, 12, 17, 0.72);
+    backdrop-filter: blur(24px) saturate(160%);
+    -webkit-backdrop-filter: blur(24px) saturate(160%);
     border: 1px solid rgba(255, 255, 255, 0.06);
-    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+    box-shadow:
+      0 0 0 1px rgba(255,255,255,0.03) inset,
+      0 8px 32px 0 rgba(0, 0, 0, 0.55),
+      0 1px 0 0 rgba(255,255,255,0.04) inset;
   }
   .glass-panel-light {
     background: rgba(255, 255, 255, 0.03);
@@ -39,6 +43,7 @@
   --font-mono: 'JetBrains Mono', monospace;
 }
 
+/* ─── Scrollbar ─── */
 ::-webkit-scrollbar {
   height: 4px;
   width: 4px;
@@ -47,12 +52,14 @@
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.08);
   border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.15);
 }
+
+/* ─── Design Tokens ─── */
 :root {
   --text-primary: #f8fafc;
   --text-secondary: #94a3b8;
@@ -61,4 +68,132 @@
   --solar-gold-glow: rgba(251, 191, 36, 0.4);
   --earth-teal: #2dd4bf;
   --earth-teal-glow: rgba(45, 212, 191, 0.4);
+  --ops-emerald: #34d399;
+  --ops-emerald-glow: rgba(52, 211, 153, 0.35);
+  --sky-accent: #38bdf8;
+  --sky-accent-glow: rgba(56, 189, 248, 0.35);
+}
+
+/* ─── Keyframe Animations ─── */
+
+/* Slow horizontal shimmer for metric numbers */
+@keyframes shimmer {
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+.text-shimmer {
+  background: linear-gradient(
+    90deg,
+    rgba(56,189,248,0.7) 0%,
+    rgba(255,255,255,1) 40%,
+    rgba(255,255,255,1) 60%,
+    rgba(56,189,248,0.7) 100%
+  );
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: shimmer 4s ease-in-out infinite;
+}
+
+/* Orbiting ring for the status indicator */
+@keyframes orbit-spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Breathing glow for active elements */
+@keyframes glow-breathe {
+  0%, 100% { box-shadow: 0 0 8px 0px var(--glow-color, rgba(52,211,153,0.4)); }
+  50% { box-shadow: 0 0 20px 4px var(--glow-color, rgba(52,211,153,0.5)); }
+}
+.glow-breathe {
+  animation: glow-breathe 3s ease-in-out infinite;
+}
+
+/* Scan line sweep for HUD authenticity */
+@keyframes scan-line {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(100vh); }
+}
+
+/* Fade slide up for modals */
+@keyframes fadeSlideUp {
+  0% { opacity: 0; transform: translateY(16px) scale(0.98); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+.animate-fade-slide-up {
+  animation: fadeSlideUp 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Slow pulsing ring */
+@keyframes ring-pulse {
+  0%, 100% { transform: scale(1); opacity: 0.4; }
+  50% { transform: scale(1.6); opacity: 0; }
+}
+
+/* ─── Custom Range Slider ─── */
+input[type="range"].scrubber {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 6px;
+  background: linear-gradient(90deg, rgba(255,255,255,0.06) 0%, rgba(56,189,248,0.15) 50%, rgba(255,255,255,0.06) 100%);
+  border-radius: 999px;
+  outline: none;
+  cursor: pointer;
+  position: relative;
+}
+input[type="range"].scrubber::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #38bdf8;
+  border: 3px solid rgba(5,7,10,0.9);
+  box-shadow: 0 0 12px 3px rgba(56,189,248,0.5), 0 0 24px 6px rgba(56,189,248,0.2);
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+input[type="range"].scrubber::-webkit-slider-thumb:hover {
+  transform: scale(1.2);
+  box-shadow: 0 0 16px 5px rgba(56,189,248,0.6), 0 0 32px 8px rgba(56,189,248,0.3);
+}
+input[type="range"].scrubber::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #38bdf8;
+  border: 3px solid rgba(5,7,10,0.9);
+  box-shadow: 0 0 12px 3px rgba(56,189,248,0.5);
+  cursor: pointer;
+}
+
+/* ─── Progress Bar Glow Tracks ─── */
+.progress-track {
+  position: relative;
+  overflow: hidden;
+  border-radius: 999px;
+}
+.progress-track::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent);
+  animation: shimmer 3s ease-in-out infinite;
+  background-size: 200% 100%;
+}
+
+/* ─── Film Grain Overlay (very subtle) ─── */
+.grain-overlay::after {
+  content: '';
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  pointer-events: none;
+  z-index: 9999;
+  opacity: 0.025;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  mix-blend-mode: overlay;
 }
