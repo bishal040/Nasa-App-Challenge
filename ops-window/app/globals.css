@@ -197,3 +197,16 @@ input[type="range"].scrubber::-moz-range-thumb {
   background-repeat: repeat;
   mix-blend-mode: overlay;
 }
+
+/* ─── Sky Path Loop Animations ─── */
+@keyframes drawSkyPath {
+  0% { stroke-dashoffset: var(--path-length); }
+  71% { stroke-dashoffset: 0; }
+  100% { stroke-dashoffset: 0; }
+}
+
+@keyframes orbFade {
+  0%, 60% { opacity: 0; }
+  71% { opacity: 1; }
+  85%, 100% { opacity: 0; }
+}

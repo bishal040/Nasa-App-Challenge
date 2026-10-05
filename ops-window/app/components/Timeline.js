@@ -44,7 +44,7 @@ export default function Timeline({ missions, selectedId, onSelect, timelineStart
         .call(d3.axisBottom(x).ticks(isLarge ? 16 : 8).tickFormat(d => `${d}h`))
         .attr('color', 'rgba(255,255,255,0.2)')
         .selectAll('text')
-        .attr('font-size', isLarge ? '12px' : '10px');
+        .attr('font-size', isLarge ? '14px' : '12px');
 
       g.append('g')
         .attr('class', 'chart-grid')
@@ -66,7 +66,7 @@ export default function Timeline({ missions, selectedId, onSelect, timelineStart
           .attr('text-anchor', 'end')
           .attr('dominant-baseline', 'middle')
           .attr('fill', 'rgba(255,255,255,0.5)')
-          .attr('font-size', isLarge ? '12px' : '10px')
+          .attr('font-size', isLarge ? '14px' : '12px')
           .attr('font-family', 'monospace')
           .style('cursor', 'pointer')
           .text(mission.mission.length > (isLarge ? 20 : 12) ? mission.mission.slice(0, isLarge ? 19 : 11) + '…' : mission.mission)
@@ -167,14 +167,14 @@ export default function Timeline({ missions, selectedId, onSelect, timelineStart
         <div ref={chartRef} style={{ width: '100%', height: '100%' }} />
       </div>
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', padding: '8px 0', justifyContent: 'center' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '10px', color: 'rgba(255,255,255,0.6)', fontFamily: 'monospace' }}>
-          <div style={{ width: 12, height: 3, borderRadius: 2, backgroundColor: '#fbbf24' }} /> Sun
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: 'rgba(255,255,255,0.8)', fontFamily: 'monospace' }}>
+          <div style={{ width: 14, height: 4, borderRadius: 2, backgroundColor: '#fbbf24' }} /> Sun
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '10px', color: 'rgba(255,255,255,0.6)', fontFamily: 'monospace' }}>
-          <div style={{ width: 12, height: 3, borderRadius: 2, backgroundColor: '#2dd4bf' }} /> Earth
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: 'rgba(255,255,255,0.8)', fontFamily: 'monospace' }}>
+          <div style={{ width: 14, height: 4, borderRadius: 2, backgroundColor: '#2dd4bf' }} /> Earth
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '10px', color: 'rgba(255,255,255,0.6)', fontFamily: 'monospace' }}>
-          <div style={{ width: 12, height: 3, borderRadius: 2, backgroundColor: '#34d399' }} /> Ops Window
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: 'rgba(255,255,255,0.8)', fontFamily: 'monospace' }}>
+          <div style={{ width: 14, height: 4, borderRadius: 2, backgroundColor: '#34d399' }} /> Ops Window
         </div>
       </div>
     </div>
