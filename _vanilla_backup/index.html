@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ops Window — Lunar Mission Operational Windows | NASA Space Apps 2026</title>
+  <meta name="description" content="Visualize when lunar landers can actually work — the overlap of solar power and Earth communications for 22 missions from Surveyor to CLPS.">
+  <meta property="og:title" content="Ops Window — Lunar Mission Operational Windows">
+  <meta property="og:description" content="Interactive visualization of lunar landing operational windows for NASA Space Apps 2026.">
+  <meta property="og:type" content="website">
+
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+    crossorigin="anonymous">
+
+  <!-- App CSS -->
+  <link rel="stylesheet" href="styles.css">
+
+  <!-- Leaflet JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+    crossorigin="anonymous"></script>
+
+  <!-- D3.js -->
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+</head>
+<body>
+  <div id="app-container">
+
+    <!-- ========== HEADER ========== -->
+    <header class="app-header" role="banner">
+      <div class="logo">
+        <div class="logo-icon" aria-hidden="true">🌙</div>
+        <div>
+          <h1>Ops Window</h1>
+          <span class="subtitle">NASA Space Apps 2026 — Lunar Ops Visualizer</span>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button class="btn-info" id="btn-about" aria-label="About this project">
+          <span>ℹ</span> About &amp; Limitations
+        </button>
+      </div>
+    </header>
+
+    <!-- ========== MAIN CONTENT ========== -->
+    <main class="main-content" role="main">
+
+      <!-- LUNAR MAP (full width) -->
+      <section class="view-section glass-panel map-section" aria-label="Lunar Map">
+        <div class="section-header">
+          <h2><span class="section-icon">🗺️</span> Lunar Surface Map</h2>
+          <span class="section-badge" id="map-mission-count">Loading...</span>
+        </div>
+        <div class="section-body">
+          <div id="lunar-map" role="img" aria-label="Interactive lunar map showing 22 mission landing sites"></div>
+        </div>
+      </section>
+
+      <!-- COMPARE CHART -->
+      <section class="view-section glass-panel compare-section" aria-label="Ops Efficiency Comparison">
+        <div class="section-header">
+          <h2><span class="section-icon">📊</span> Latitude vs Ops Efficiency</h2>
+          <span class="section-badge">Scatter Plot</span>
+        </div>
+        <div class="section-body">
+          <div id="compare-chart"></div>
+          <div class="chart-legend" id="compare-legend"></div>
+        </div>
+      </section>
+
+      <!-- TIMELINE CHART -->
+      <section class="view-section glass-panel timeline-section" aria-label="Mission Timeline">
+        <div class="section-header">
+          <h2><span class="section-icon">📅</span> Visibility Timeline</h2>
+          <span class="section-badge">Interval Bars</span>
+        </div>
+        <div class="section-body">
+          <div id="timeline-chart"></div>
+          <div class="chart-legend" id="timeline-legend"></div>
+        </div>
+      </section>
+
+      <!-- POLAR SKY PLOT -->
+      <section class="view-section glass-panel polar-section" aria-label="Polar Sky Plot">
+        <div class="section-header">
+          <h2><span class="section-icon">🔭</span> Sky Plot</h2>
+          <span class="section-badge" id="polar-mission-label">Select a mission</span>
+        </div>
+        <div class="section-body">
+          <div id="polar-chart">
+            <div class="empty-state" id="polar-empty">
+              <div class="empty-icon">🔭</div>
+              <p>Select a mission to view Sun &amp; Earth paths across the sky at that landing site</p>
+            </div>
+          </div>
+          <div class="chart-legend" id="polar-legend" style="display:none;">
+            <div class="legend-item">
+              <div class="legend-line" style="background:var(--solar-gold)"></div>
+              Sun Path
+            </div>
+            <div class="legend-item">
+              <div class="legend-line" style="background:var(--earth-teal)"></div>
+              Earth Path
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- ========== DETAIL PANEL (slide-in) ========== -->
+    <div class="detail-panel-overlay" id="panel-overlay" aria-hidden="true"></div>
+    <aside class="detail-panel" id="detail-panel" role="complementary" aria-label="Mission details">
+      <div class="detail-panel-header">
+        <h2 id="panel-mission-name">Mission Details</h2>
+        <button class="btn-close-panel" id="btn-close-panel" aria-label="Close panel">✕</button>
+      </div>
+      <div class="detail-panel-content" id="panel-content">
+        <!-- Dynamically populated -->
+      </div>
+    </aside>
+
+    <!-- ========== FOOTER ========== -->
+    <footer class="app-footer" role="contentinfo">
+      <div class="limitations-bar">
+        <div class="limitation-item">
+          <span class="lim-icon">⚠</span>
+          Flat horizon model — no terrain
+        </div>
+        <div class="limitation-item">
+          <span class="lim-icon">⚠</span>
+          Polar numbers are upper bounds
+        </div>
+        <div class="limitation-item">
+          <span class="lim-icon">⚠</span>
+          CLPS sites may have shifted
+        </div>
+        <div class="limitation-item">
+          <span class="lim-icon">⚠</span>
+          IM-1/IM-2 positions are post-tip
+        </div>
+      </div>
+      <div class="footer-credit">
+        Ops Window · NASA Space Apps 2026 · Data from
+        <a href="https://ssd.jpl.nasa.gov/horizons/" target="_blank" rel="noopener">JPL Horizons</a>
+      </div>
+    </footer>
+
+    <!-- ========== ABOUT MODAL ========== -->
+    <div class="modal-overlay" id="about-modal" aria-hidden="true">
+      <div class="modal-content glass-panel-solid">
+        <h2>About Ops Window</h2>
+        <p>
+          Two angles decide what a lunar lander can do: how high the <strong style="color:var(--solar-gold)">Sun</strong>
+          sits above the horizon (power) and how high <strong style="color:var(--earth-teal)">Earth</strong> sits
+          above the horizon (communications). Real work only happens when <strong>both are up at once</strong> —
+          the <strong style="color:var(--overlap-green)">ops window</strong>.
+        </p>
+        <p>
+          We compute that overlap for every lunar landing site from Surveyor to CLPS,
+          using elevation data from JPL Horizons queried hourly across a full year.
+        </p>
+        <h3 style="margin: 16px 0 8px; font-size: 0.95rem;">Known Limitations</h3>
+        <ul>
+          <li>Horizons treats the lunar horizon as flat. Real terrain (crater rims, mountains) is not modeled.</li>
+          <li>At 85°S, Sun and Earth sit within ~2° of the horizon. Terrain genuinely decides visibility. Our polar numbers are <strong>upper bounds</strong>.</li>
+          <li>CLPS target sites may have shifted since data was last verified.</li>
+          <li>IM-1 and IM-2 positions are post-landing (both tipped over), not pre-launch targets.</li>
+        </ul>
+        <button class="btn-close-modal" id="btn-close-modal">Got it</button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ========== APP JS ========== -->
+  <script src="app.js"></script>
+</body>
+</html>

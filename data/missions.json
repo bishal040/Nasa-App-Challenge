@@ -1,0 +1,227 @@
+{
+  "meta": {
+    "generated": "2026-10-05T00:00:00Z",
+    "version": "mock-v1",
+    "analysis_window": {
+      "start": "2025-01-01T00:00:00Z",
+      "end": "2026-01-01T00:00:00Z"
+    },
+    "total_hours": 8760,
+    "note": "Mock data for development. Replace with Person 2's precomputed file when ready."
+  },
+  "missions": [
+    {
+      "mission_id": "apollo-11",
+      "mission": "Apollo 11",
+      "provider": "NASA",
+      "era": "Apollo",
+      "site_name": "Mare Tranquillitatis",
+      "lat_deg": 0.6875,
+      "lon_east_deg": 23.4333,
+      "landing_utc": "1969-07-20T20:17:40Z",
+      "status": "success",
+      "ops_duration": "8 days",
+      "end_reason": "Planned crew return to Earth",
+      "payloads": ["EASEP", "Laser Retroreflector", "Passive Seismometer", "Lunar Dust Detector"],
+      "source_url": "https://nssdc.gsfc.nasa.gov/planetary/lunar/apollo_land.html",
+      "confidence": "confirmed",
+      "metrics": {
+        "ops_efficiency": 0.98,
+        "sun_hours": 4380,
+        "earth_hours": 8760,
+        "overlap_hours": 4380
+      },
+      "intervals": {
+        "sun": [[0, 354], [708, 1062], [1416, 1770], [2124, 2478], [2832, 3186], [3540, 3894], [4248, 4602], [4956, 5310], [5664, 6018], [6372, 6726], [7080, 7434], [7788, 8142], [8496, 8760]],
+        "earth": [[0, 8760]],
+        "overlap": [[0, 354], [708, 1062], [1416, 1770], [2124, 2478], [2832, 3186], [3540, 3894], [4248, 4602], [4956, 5310], [5664, 6018], [6372, 6726], [7080, 7434], [7788, 8142], [8496, 8760]]
+      },
+      "tracks": {
+        "sun": [
+          {"az": 90, "el": 0}, {"az": 95, "el": 10}, {"az": 105, "el": 25},
+          {"az": 120, "el": 40}, {"az": 140, "el": 55}, {"az": 160, "el": 65},
+          {"az": 180, "el": 70}, {"az": 200, "el": 65}, {"az": 220, "el": 55},
+          {"az": 240, "el": 40}, {"az": 255, "el": 25}, {"az": 265, "el": 10},
+          {"az": 270, "el": 0}, {"az": 275, "el": -10}, {"az": 280, "el": -25},
+          {"az": 290, "el": -40}, {"az": 310, "el": -55}, {"az": 330, "el": -65},
+          {"az": 0, "el": -70}, {"az": 20, "el": -65}, {"az": 40, "el": -55},
+          {"az": 60, "el": -40}, {"az": 75, "el": -25}, {"az": 85, "el": -10}
+        ],
+        "earth": [
+          {"az": 0, "el": 58}, {"az": 5, "el": 60}, {"az": 10, "el": 61},
+          {"az": 15, "el": 60}, {"az": 20, "el": 58}, {"az": 15, "el": 56},
+          {"az": 10, "el": 55}, {"az": 5, "el": 56}, {"az": 0, "el": 58}
+        ]
+      }
+    },
+    {
+      "mission_id": "apollo-15",
+      "mission": "Apollo 15",
+      "provider": "NASA",
+      "era": "Apollo",
+      "site_name": "Hadley–Apennine",
+      "lat_deg": 26.1322,
+      "lon_east_deg": 3.6339,
+      "landing_utc": "1971-07-30T22:16:29Z",
+      "status": "success",
+      "ops_duration": "12 days (surface: 66h 55m)",
+      "end_reason": "Planned crew return to Earth",
+      "payloads": ["ALSEP", "Lunar Roving Vehicle", "Laser Retroreflector", "Heat Flow Experiment"],
+      "source_url": "https://nssdc.gsfc.nasa.gov/planetary/lunar/apollo_land.html",
+      "confidence": "confirmed",
+      "metrics": {
+        "ops_efficiency": 0.95,
+        "sun_hours": 4380,
+        "earth_hours": 8760,
+        "overlap_hours": 4161
+      },
+      "intervals": {
+        "sun": [[0, 354], [708, 1062], [1416, 1770], [2124, 2478], [2832, 3186], [3540, 3894], [4248, 4602], [4956, 5310], [5664, 6018], [6372, 6726], [7080, 7434], [7788, 8142], [8496, 8760]],
+        "earth": [[0, 8760]],
+        "overlap": [[0, 354], [708, 1062], [1416, 1770], [2124, 2478], [2832, 3186], [3540, 3894], [4248, 4602], [4956, 5310], [5664, 6018], [6372, 6726], [7080, 7434], [7788, 8142], [8496, 8760]]
+      },
+      "tracks": {
+        "sun": [
+          {"az": 90, "el": 0}, {"az": 100, "el": 12}, {"az": 115, "el": 28},
+          {"az": 135, "el": 44}, {"az": 155, "el": 56}, {"az": 175, "el": 62},
+          {"az": 195, "el": 60}, {"az": 215, "el": 52}, {"az": 235, "el": 38},
+          {"az": 250, "el": 22}, {"az": 262, "el": 10}, {"az": 270, "el": 0},
+          {"az": 278, "el": -10}, {"az": 290, "el": -22}, {"az": 305, "el": -38},
+          {"az": 325, "el": -52}, {"az": 345, "el": -60}, {"az": 5, "el": -62},
+          {"az": 25, "el": -56}, {"az": 45, "el": -44}, {"az": 65, "el": -28},
+          {"az": 80, "el": -12}
+        ],
+        "earth": [
+          {"az": 355, "el": 62}, {"az": 0, "el": 64}, {"az": 5, "el": 65},
+          {"az": 10, "el": 64}, {"az": 15, "el": 62}, {"az": 10, "el": 60},
+          {"az": 5, "el": 59}, {"az": 0, "el": 60}, {"az": 355, "el": 62}
+        ]
+      }
+    },
+    {
+      "mission_id": "change-4",
+      "mission": "Chang'e 4",
+      "provider": "CNSA",
+      "era": "Modern",
+      "site_name": "Von Kármán crater (far side)",
+      "lat_deg": -45.4561,
+      "lon_east_deg": 177.5885,
+      "landing_utc": "2019-01-03T02:26:00Z",
+      "status": "success",
+      "ops_duration": "Still operating (7+ years)",
+      "end_reason": "Still active via Queqiao relay",
+      "payloads": ["Yutu-2 rover", "Low-Frequency Spectrometer", "Lunar Penetrating Radar", "Panoramic Camera"],
+      "source_url": "https://www.lroc.asu.edu/posts/1152",
+      "confidence": "confirmed",
+      "metrics": {
+        "ops_efficiency": 0.0,
+        "sun_hours": 4380,
+        "earth_hours": 0,
+        "overlap_hours": 0
+      },
+      "intervals": {
+        "sun": [[0, 354], [708, 1062], [1416, 1770], [2124, 2478], [2832, 3186], [3540, 3894], [4248, 4602], [4956, 5310], [5664, 6018], [6372, 6726], [7080, 7434], [7788, 8142], [8496, 8760]],
+        "earth": [],
+        "overlap": []
+      },
+      "tracks": {
+        "sun": [
+          {"az": 90, "el": 0}, {"az": 100, "el": 15}, {"az": 120, "el": 35},
+          {"az": 150, "el": 50}, {"az": 180, "el": 55}, {"az": 210, "el": 50},
+          {"az": 240, "el": 35}, {"az": 260, "el": 15}, {"az": 270, "el": 0},
+          {"az": 280, "el": -15}, {"az": 300, "el": -35}, {"az": 330, "el": -50},
+          {"az": 0, "el": -55}, {"az": 30, "el": -50}, {"az": 60, "el": -35},
+          {"az": 80, "el": -15}
+        ],
+        "earth": [
+          {"az": 180, "el": -58}, {"az": 180, "el": -60}, {"az": 180, "el": -61},
+          {"az": 180, "el": -60}, {"az": 180, "el": -58}
+        ]
+      }
+    },
+    {
+      "mission_id": "im-1",
+      "mission": "IM-1 Odysseus",
+      "provider": "Intuitive Machines",
+      "era": "CLPS",
+      "site_name": "Malapert A",
+      "lat_deg": -80.13,
+      "lon_east_deg": 1.44,
+      "landing_utc": "2024-02-22T23:23:00Z",
+      "status": "partial",
+      "ops_duration": "7 days (tipped on landing)",
+      "end_reason": "Battery depletion after tip-over; lost solar orientation",
+      "payloads": ["SCALPSS", "EagleCam", "RFMG", "NDL", "ROLSES", "LN-1"],
+      "source_url": "https://www.lroc.asu.edu/posts/1244",
+      "confidence": "confirmed",
+      "metrics": {
+        "ops_efficiency": 0.38,
+        "sun_hours": 2100,
+        "earth_hours": 5800,
+        "overlap_hours": 1680
+      },
+      "intervals": {
+        "sun": [[0, 160], [708, 868], [1416, 1576], [2124, 2284], [2832, 2992], [3540, 3700], [4248, 4408], [4956, 5116], [5664, 5824], [6372, 6532], [7080, 7240], [7788, 7948], [8496, 8656]],
+        "earth": [[0, 500], [708, 1100], [1416, 1900], [2124, 2600], [2832, 3300], [3540, 4000], [4248, 4700], [4956, 5400], [5664, 6100], [6372, 6800], [7080, 7500], [7788, 8200]],
+        "overlap": [[0, 160], [708, 868], [1416, 1576], [2124, 2284], [2832, 2992], [3540, 3700], [4248, 4408], [4956, 5116], [5664, 5824], [6372, 6532], [7080, 7240], [7788, 7948]]
+      },
+      "tracks": {
+        "sun": [
+          {"az": 90, "el": 0}, {"az": 100, "el": 2}, {"az": 120, "el": 5},
+          {"az": 150, "el": 7}, {"az": 180, "el": 8}, {"az": 210, "el": 7},
+          {"az": 240, "el": 5}, {"az": 260, "el": 2}, {"az": 270, "el": 0},
+          {"az": 280, "el": -2}, {"az": 300, "el": -5}, {"az": 330, "el": -7},
+          {"az": 0, "el": -8}, {"az": 30, "el": -7}, {"az": 60, "el": -5},
+          {"az": 80, "el": -2}
+        ],
+        "earth": [
+          {"az": 355, "el": 8}, {"az": 0, "el": 10}, {"az": 5, "el": 11},
+          {"az": 10, "el": 10}, {"az": 15, "el": 8}, {"az": 10, "el": 6},
+          {"az": 5, "el": 5}, {"az": 0, "el": 6}, {"az": 355, "el": 8}
+        ]
+      }
+    },
+    {
+      "mission_id": "clps-polar-planned",
+      "mission": "CLPS Polar Lander",
+      "provider": "NASA / CLPS",
+      "era": "CLPS",
+      "site_name": "Shackleton Crater Rim",
+      "lat_deg": -85.0,
+      "lon_east_deg": 0.0,
+      "landing_utc": null,
+      "status": "planned",
+      "ops_duration": "TBD",
+      "end_reason": "Not yet flown",
+      "payloads": ["VIPER-derived instruments", "Neutron Spectrometer", "Drill System"],
+      "source_url": "https://www.nasa.gov/clps",
+      "confidence": "verify",
+      "metrics": {
+        "ops_efficiency": 0.15,
+        "sun_hours": 1314,
+        "earth_hours": 4380,
+        "overlap_hours": 1314
+      },
+      "intervals": {
+        "sun": [[0, 100], [708, 808], [1416, 1516], [2124, 2224], [2832, 2932], [3540, 3640], [4248, 4348], [4956, 5056], [5664, 5764], [6372, 6472], [7080, 7180], [7788, 7888], [8496, 8596]],
+        "earth": [[0, 400], [708, 1000], [1416, 1800], [2124, 2500], [2832, 3200], [3540, 3900], [4248, 4600], [4956, 5300], [5664, 6000], [6372, 6700], [7080, 7400], [7788, 8100]],
+        "overlap": [[0, 100], [708, 808], [1416, 1516], [2124, 2224], [2832, 2932], [3540, 3640], [4248, 4348], [4956, 5056], [5664, 5764], [6372, 6472], [7080, 7180], [7788, 7888]]
+      },
+      "tracks": {
+        "sun": [
+          {"az": 90, "el": 0}, {"az": 100, "el": 1}, {"az": 120, "el": 2.5},
+          {"az": 150, "el": 3.5}, {"az": 180, "el": 4}, {"az": 210, "el": 3.5},
+          {"az": 240, "el": 2.5}, {"az": 260, "el": 1}, {"az": 270, "el": 0},
+          {"az": 280, "el": -1}, {"az": 300, "el": -2.5}, {"az": 330, "el": -3.5},
+          {"az": 0, "el": -4}, {"az": 30, "el": -3.5}, {"az": 60, "el": -2.5},
+          {"az": 80, "el": -1}
+        ],
+        "earth": [
+          {"az": 355, "el": 3}, {"az": 0, "el": 5}, {"az": 5, "el": 6},
+          {"az": 10, "el": 5}, {"az": 15, "el": 3}, {"az": 10, "el": 1.5},
+          {"az": 5, "el": 1}, {"az": 0, "el": 1.5}, {"az": 355, "el": 3}
+        ]
+      }
+    }
+  ]
+}
