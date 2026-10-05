@@ -203,25 +203,26 @@ export default function LunarMap({ missions, activeId, onSelect, simulatedTime }
       `}</style>
       <div className="relative w-full h-full">
         <div ref={mapRef} className="w-full h-full" />
-        <div className="absolute bottom-6 left-4 z-[400] bg-[#05070a]/90 backdrop-blur-xl p-4 rounded-xl border border-white/[0.06] shadow-2xl pointer-events-none flex flex-col gap-3">
-          <div className="text-[10px] font-heading font-semibold uppercase tracking-[0.15em] text-white/80">Map Legend</div>
-          <div className="flex flex-col gap-2">
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded bg-[#34d399]" />
-              <span className="text-[10px] font-mono text-slate-400">Ops Window (Sun + Earth Link)</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded bg-[#fbbf24]" />
-              <span className="text-[10px] font-mono text-slate-400">Daylight Only (No Earth Link)</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded bg-[#ef4444] opacity-50" />
-              <span className="text-[10px] font-mono text-slate-400">Far Side (Earth Shadow Zone)</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded bg-gradient-to-r from-black to-[#222] border border-white/20" />
-              <span className="text-[10px] font-mono text-slate-400">Night Side (Penumbra Edge)</span>
-            </div>
+        {/* Redesigned Horizontal Legend - Centered above the Scrubber */}
+        <div className="absolute bottom-[90px] left-1/2 -translate-x-1/2 z-[400] glass-panel px-6 py-2.5 rounded-full pointer-events-none flex items-center gap-6 shadow-[0_8px_32px_rgba(0,0,0,0.8)] border border-white/10 backdrop-blur-md bg-[#05070a]/60">
+          <div className="flex items-center gap-2">
+            <div className="w-2.5 h-2.5 rounded-full bg-[#34d399] shadow-[0_0_8px_#34d399]" />
+            <span className="text-[10px] font-mono text-white/80 tracking-wide">Ops Window</span>
+          </div>
+          <div className="w-[1px] h-4 bg-white/10" />
+          <div className="flex items-center gap-2">
+            <div className="w-2.5 h-2.5 rounded-full bg-[#fbbf24] shadow-[0_0_8px_#fbbf24]" />
+            <span className="text-[10px] font-mono text-white/80 tracking-wide">Daylight (No Comm)</span>
+          </div>
+          <div className="w-[1px] h-4 bg-white/10" />
+          <div className="flex items-center gap-2">
+            <div className="w-2.5 h-2.5 rounded-full bg-[#ef4444] opacity-80 shadow-[0_0_8px_#ef4444]" />
+            <span className="text-[10px] font-mono text-white/80 tracking-wide">Far Side Blackout</span>
+          </div>
+          <div className="w-[1px] h-4 bg-white/10" />
+          <div className="flex items-center gap-2">
+            <div className="w-2.5 h-2.5 rounded-full bg-gradient-to-r from-black to-slate-800 border border-white/20" />
+            <span className="text-[10px] font-mono text-white/80 tracking-wide">Night Side</span>
           </div>
         </div>
       </div>

@@ -7,108 +7,126 @@ export default function Timeline({ missions, selectedId, onSelect, timelineStart
   const chartRef = useRef(null);
 
   useEffect(() => {
-    if (!missions || missions.length === 0 || !chartRef.current) return;
+    if (!chartRef.current) return;
 
-    d3.select(chartRef.current).selectAll('*').remove();
+    const renderChart = () => {
+      if (!missions || missions.length === 0) return;
+      d3.select(chartRef.current).selectAll('*').remove();
 
-    const rect = chartRef.current.getBoundingClientRect();
-    const margin = { top: 10, right: 20, bottom: 30, left: 100 };
-    const rowHeight = 35;
-    const height = missions.length * rowHeight + margin.top + margin.bottom;
-    const width = rect.width - margin.left - margin.right;
+      const rect = chartRef.current.parentElement.getBoundingClientRect();
+      const isLarge = rect.height > 400; // Detect if it's running in the expanded modal
+      
+      const margin = { top: 10, right: 20, bottom: 30, left: isLarge ? 160 : 100 };
+      const rowHeight = isLarge ? 45 : 35; // Taller rows in modal
+      const height = missions.length * rowHeight + margin.top + margin.bottom;
+      const width = rect.width - margin.left - margin.right;
 
-    const svg = d3.select(chartRef.current)
-      .append('svg')
-      .attr('width', rect.width)
-      .attr('height', Math.max(height, 200))
-      .attr('role', 'img');
+      const svg = d3.select(chartRef.current)
+        .append('svg')
+        .attr('width', rect.width)
+        .attr('height', Math.max(height, 200))
+        .attr('role', 'img');
 
-    const g = svg.append('g')
-      .attr('transform', `translate(${margin.left},${margin.top})`);
+      const g = svg.append('g')
+        .attr('transform', `translate(${margin.left},${margin.top})`);
 
-    // Force domain to match the fixed 60-day (1440h) window
-    const x = d3.scaleLinear()
-      .domain([0, durationHours || 1440])
-      .range([0, width]);
+      const x = d3.scaleLinear()
+        .domain([0, durationHours || 1440])
+        .range([0, width]);
 
-    const y = d3.scaleBand()
-      .domain(missions.map(m => m.mission_id))
-      .range([0, missions.length * rowHeight])
-      .padding(0.3);
+      const y = d3.scaleBand()
+        .domain(missions.map(m => m.mission_id))
+        .range([0, missions.length * rowHeight])
+        .padding(0.3);
 
-    g.append('g')
-      .attr('transform', `translate(0,${missions.length * rowHeight})`)
-      .call(d3.axisBottom(x).ticks(8).tickFormat(d => `${d}h`))
-      .attr('color', 'rgba(255,255,255,0.2)');
+      g.append('g')
+        .attr('transform', `translate(0,${missions.length * rowHeight})`)
+        .call(d3.axisBottom(x).ticks(isLarge ? 16 : 8).tickFormat(d => `${d}h`))
+        .attr('color', 'rgba(255,255,255,0.2)')
+        .selectAll('text')
+        .attr('font-size', isLarge ? '12px' : '10px');
 
-    g.append('g')
-      .attr('class', 'chart-grid')
-      .call(d3.axisTop(x).tickSize(-(missions.length * rowHeight)).tickFormat(''))
-      .attr('color', 'rgba(255,255,255,0.05)');
+      g.append('g')
+        .attr('class', 'chart-grid')
+        .call(d3.axisTop(x).tickSize(-(missions.length * rowHeight)).tickFormat(''))
+        .attr('color', 'rgba(255,255,255,0.05)');
 
-    const barHeight = Math.max(2, y.bandwidth() / 3 - 1);
-    const colors = { sun: '#fbbf24', earth: '#2dd4bf', overlap: '#34d399' };
-    const offsets = { sun: 0, earth: 1, overlap: 2 };
+      const barHeight = Math.max(2, y.bandwidth() / 3 - 1);
+      const colors = { sun: '#fbbf24', earth: '#2dd4bf', overlap: '#34d399' };
+      const offsets = { sun: 0, earth: 1, overlap: 2 };
 
-    missions.forEach(mission => {
-      const missionG = g.append('g')
-        .attr('class', 'timeline-row')
-        .attr('data-mission-id', mission.mission_id);
+      missions.forEach(mission => {
+        const missionG = g.append('g')
+          .attr('class', 'timeline-row')
+          .attr('data-mission-id', mission.mission_id);
 
-      missionG.append('text')
-        .attr('x', -8)
-        .attr('y', y(mission.mission_id) + y.bandwidth() / 2)
-        .attr('text-anchor', 'end')
-        .attr('dominant-baseline', 'middle')
-        .attr('fill', 'rgba(255,255,255,0.5)')
-        .attr('font-size', '10px')
-        .attr('font-family', 'monospace')
-        .style('cursor', 'pointer')
-        .text(mission.mission.length > 12 ? mission.mission.slice(0, 11) + '…' : mission.mission)
-        .on('mouseenter', function() { d3.select(this).attr('fill', '#fff'); })
-        .on('mouseleave', function() { d3.select(this).attr('fill', 'rgba(255,255,255,0.5)'); })
-        .on('click', () => { if (onSelect) onSelect(mission.mission_id); });
+        missionG.append('text')
+          .attr('x', -8)
+          .attr('y', y(mission.mission_id) + y.bandwidth() / 2)
+          .attr('text-anchor', 'end')
+          .attr('dominant-baseline', 'middle')
+          .attr('fill', 'rgba(255,255,255,0.5)')
+          .attr('font-size', isLarge ? '12px' : '10px')
+          .attr('font-family', 'monospace')
+          .style('cursor', 'pointer')
+          .text(mission.mission.length > (isLarge ? 20 : 12) ? mission.mission.slice(0, isLarge ? 19 : 11) + '…' : mission.mission)
+          .on('mouseenter', function() { d3.select(this).attr('fill', '#fff'); })
+          .on('mouseleave', function() { d3.select(this).attr('fill', 'rgba(255,255,255,0.5)'); })
+          .on('click', () => { if (onSelect) onSelect(mission.mission_id); });
 
-      ['sun', 'earth', 'overlap'].forEach(key => {
-        const intervals = mission.intervals?.[key] || [];
-        const barY = y(mission.mission_id) + offsets[key] * (barHeight + 1);
+        ['sun', 'earth', 'overlap'].forEach(key => {
+          const intervals = mission.intervals?.[key] || [];
+          const barY = y(mission.mission_id) + offsets[key] * (barHeight + 1);
 
-        intervals.forEach(([start, end]) => {
-          const clampedStart = Math.max(0, start);
-          const clampedEnd = Math.min(end, x.domain()[1]);
-          if (clampedStart >= clampedEnd) return;
+          intervals.forEach(([start, end]) => {
+            const clampedStart = Math.max(0, start);
+            const clampedEnd = Math.min(end, x.domain()[1]);
+            if (clampedStart >= clampedEnd) return;
 
-          missionG.append('rect')
-            .attr('class', 'timeline-bar')
-            .attr('x', x(clampedStart))
-            .attr('y', barY)
-            .attr('width', x(clampedEnd) - x(clampedStart))
-            .attr('height', barHeight)
-            .attr('rx', 2)
-            .attr('ry', 2)
-            .attr('fill', colors[key])
-            .attr('opacity', key === 'overlap' ? 1 : 0.4)
-            .style('cursor', 'pointer')
-            .on('mouseenter', function() { d3.select(this).style('opacity', '1'); })
-            .on('mouseleave', function() { 
-              const isSelected = d3.select(this.parentNode).classed('selected');
-              d3.select(this).style('opacity', isSelected ? '1' : (key === 'overlap' ? '0.9' : '0.4'));
-            })
-            .on('click', () => { if (onSelect) onSelect(mission.mission_id); });
+            missionG.append('rect')
+              .attr('class', 'timeline-bar')
+              .attr('x', x(clampedStart))
+              .attr('y', barY)
+              .attr('width', x(clampedEnd) - x(clampedStart))
+              .attr('height', barHeight)
+              .attr('rx', 2)
+              .attr('ry', 2)
+              .attr('fill', colors[key])
+              .attr('opacity', key === 'overlap' ? 1 : 0.4)
+              .style('cursor', 'pointer')
+              .on('mouseenter', function() { d3.select(this).style('opacity', '1'); })
+              .on('mouseleave', function() { 
+                const isSelected = d3.select(this.parentNode).classed('selected');
+                d3.select(this).style('opacity', isSelected ? '1' : (key === 'overlap' ? '0.9' : '0.4'));
+              })
+              .on('click', () => { if (onSelect) onSelect(mission.mission_id); });
+          });
         });
       });
+
+      const playheadGroup = g.append('g').attr('class', 'playhead');
+      playheadGroup.append('line')
+        .attr('y1', 0)
+        .attr('y2', missions.length * rowHeight)
+        .attr('stroke', '#38bdf8')
+        .attr('stroke-width', 2)
+        .attr('stroke-dasharray', '4 4');
+        
+      // Re-apply playhead position immediately on render
+      if (timelineStartMs && simulatedTime) {
+          const currentHour = (simulatedTime - timelineStartMs) / 3600000;
+          svg.select('.playhead line').attr('x1', x(currentHour)).attr('x2', x(currentHour));
+      }
+    };
+
+    const observer = new ResizeObserver(() => {
+        renderChart();
     });
+    observer.observe(chartRef.current.parentElement);
 
-    // Draw Playhead
-    const playheadGroup = g.append('g').attr('class', 'playhead');
-    playheadGroup.append('line')
-      .attr('y1', 0)
-      .attr('y2', missions.length * rowHeight)
-      .attr('stroke', '#38bdf8')
-      .attr('stroke-width', 2)
-      .attr('stroke-dasharray', '4 4');
+    return () => observer.disconnect();
 
-  }, [missions, onSelect, durationHours]);
+  }, [missions, onSelect, durationHours, timelineStartMs, simulatedTime]);
 
   // Update Playhead & Selection efficiently
   useEffect(() => {

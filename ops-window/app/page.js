@@ -100,6 +100,7 @@ export default function Home() {
   const [activeId, setActiveId] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isSkyPathModalOpen, setIsSkyPathModalOpen] = useState(false);
+  const [isTimelineModalOpen, setIsTimelineModalOpen] = useState(false);
   
   // Fixed Timeline window: 30 days back, 30 days forward (60 days total = 1440 hours)
   const [timelineStartMs] = useState(Date.now() - 30 * 24 * 60 * 60 * 1000);
@@ -194,8 +195,14 @@ export default function Home() {
               <CompareChart missions={missions} selectedId={activeId} onSelect={setActiveId} />
             </div>
           </div>
-          <div className="glass-panel rounded-2xl flex flex-col h-[300px] overflow-hidden p-4">
-            <h3 className="text-[10px] font-mono uppercase tracking-[0.2em] text-white/60 mb-2">60-Day Window Forecast</h3>
+          <div 
+            className="glass-panel rounded-2xl flex flex-col h-[300px] overflow-hidden p-4 cursor-pointer hover:bg-white/5 transition-colors group relative"
+            onClick={() => setIsTimelineModalOpen(true)}
+          >
+            <div className="flex items-center gap-2 mb-2">
+               <h3 className="text-[10px] font-mono uppercase tracking-[0.2em] text-white/60 group-hover:text-sky-400 transition-colors">60-Day Window Forecast</h3>
+               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-3 h-3 text-white/40 group-hover:text-sky-400 transition-colors"><path strokeLinecap="round" strokeLinejoin="round" d="M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9M3.75 20.25v-4.5m0 4.5h4.5m-4.5 0L9 15M20.25 3.75h-4.5m4.5 0v4.5m0-4.5L15 9m5.25 11.25h-4.5m4.5 0v-4.5m0 4.5L15 15" /></svg>
+            </div>
             <div className="flex-1">
               <Timeline 
                 missions={missions} 
@@ -255,6 +262,35 @@ export default function Home() {
         </aside>
 
       </div>
+
+      {/* Timeline Expanded Modal */}
+      {isTimelineModalOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center pointer-events-auto">
+          <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={() => setIsTimelineModalOpen(false)} />
+          <div className="glass-panel p-8 rounded-3xl w-[95vw] max-w-[1200px] h-[85vh] flex flex-col relative animate-in fade-in zoom-in duration-300">
+            <button 
+              onClick={() => setIsTimelineModalOpen(false)}
+              className="absolute top-6 right-6 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white/70 hover:text-white transition-colors z-50"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+            </button>
+            <div className="mb-4 text-center">
+              <h2 className="text-xl font-heading font-semibold text-white tracking-wide">60-Day Historical Window Analysis</h2>
+              <p className="text-xs font-mono text-white/40 uppercase tracking-widest mt-1">Fleet Overview</p>
+            </div>
+            <div className="flex-1 w-full h-full relative overflow-hidden">
+              <Timeline 
+                missions={missions} 
+                selectedId={activeId} 
+                onSelect={setActiveId} 
+                timelineStartMs={timelineStartMs}
+                simulatedTime={simulatedTime}
+                durationHours={timelineDurationHours}
+              />
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Sky Path Expanded Modal */}
       {isSkyPathModalOpen && (
