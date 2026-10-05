@@ -53,3 +53,12 @@
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.2);
 }
+:root {
+  --text-primary: #f8fafc;
+  --text-secondary: #94a3b8;
+  --text-dim: #64748b;
+  --solar-gold: #fbbf24;
+  --solar-gold-glow: rgba(251, 191, 36, 0.4);
+  --earth-teal: #2dd4bf;
+  --earth-teal-glow: rgba(45, 212, 191, 0.4);
+}
