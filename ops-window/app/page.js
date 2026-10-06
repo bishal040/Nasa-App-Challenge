@@ -109,6 +109,9 @@ export default function Home() {
   const [simulatedTime, setSimulatedTime] = useState(Date.now());
   const [isPlaying, setIsPlaying] = useState(false);
 
+  const [searchQuery, setSearchQuery] = useState('');
+  const [providerFilter, setProviderFilter] = useState('ALL');
+
   useEffect(() => {
     fetch('/data/missions.json')
       .then(r => r.json())
@@ -139,13 +142,28 @@ export default function Home() {
     });
   }, [rawMissions, timelineStartMs]);
 
+  // Extract unique providers for the filter dropdown
+  const uniqueProviders = useMemo(() => {
+    const set = new Set(rawMissions.map(m => m.provider));
+    return ['ALL', ...Array.from(set).sort()];
+  }, [rawMissions]);
+
+  // Apply search and filter BEFORE computing live metrics
+  const filteredMissionsWithIntervals = useMemo(() => {
+    return missionsWithIntervals.filter(m => {
+      const matchSearch = m.mission.toLowerCase().includes(searchQuery.toLowerCase()) || m.site_name.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchProvider = providerFilter === 'ALL' || m.provider === providerFilter;
+      return matchSearch && matchProvider;
+    });
+  }, [missionsWithIntervals, searchQuery, providerFilter]);
+
   // Compute live metrics for the active time scrubber position
   const missions = useMemo(() => {
-    return missionsWithIntervals.map(m => {
+    return filteredMissionsWithIntervals.map(m => {
       const metrics = simulateMissionMetrics(m.lat_deg, m.lon_east_deg, simulatedTime);
       return { ...m, computedMetrics: metrics };
     });
-  }, [missionsWithIntervals, simulatedTime]);
+  }, [filteredMissionsWithIntervals, simulatedTime]);
 
   const activeMission = missions.find(m => m.mission_id === activeId) || missions[0];
 
@@ -204,6 +222,33 @@ export default function Home() {
           <div>
             <h1 className="text-lg font-semibold tracking-wide text-white font-heading leading-tight">Ops Window</h1>
             <p className="text-sm font-mono text-white/40 uppercase tracking-[0.25em] leading-tight mt-0.5">Lunar Coverage Simulator</p>
+          </div>
+        </div>
+
+        {/* Central Search & Filter Bar */}
+        <div className="pointer-events-auto glass-panel px-4 py-2.5 rounded-2xl flex items-center gap-4">
+          <div className="flex items-center gap-2 bg-black/20 border border-white/10 rounded-lg px-3 py-1.5 focus-within:border-sky-500/50 focus-within:bg-black/40 transition-all">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4 text-white/40"><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" /></svg>
+            <input 
+              type="text" 
+              placeholder="Search missions or sites..." 
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              className="bg-transparent border-none outline-none text-sm font-sans text-white placeholder:text-white/30 w-[180px]"
+            />
+          </div>
+          <div className="w-[1px] h-6 bg-white/10" />
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-mono uppercase tracking-widest text-white/40">Provider</span>
+            <select 
+              value={providerFilter}
+              onChange={e => setProviderFilter(e.target.value)}
+              className="bg-black/20 border border-white/10 rounded-lg px-2 py-1 text-sm text-white outline-none cursor-pointer hover:border-sky-500/30 font-sans"
+            >
+              {uniqueProviders.map(p => (
+                <option key={p} value={p} className="bg-[#05070a] text-white">{p}</option>
+              ))}
+            </select>
           </div>
         </div>
 
