@@ -103,7 +103,24 @@ export default function LunarMap({ missions, activeId, onSelect, simulatedTime }
     });
 
     map.fitBounds(BOUNDS);
+    
+    // LAYER 1: Emergency Offline Fallback (Static Image)
+    // We add this FIRST so it sits on the bottom. If the user is entirely offline,
+    // they still see the moon instantly.
     L.imageOverlay('/moon.jpg', BOUNDS).addTo(map);
+
+    // LAYER 2: Primary Live Tiles (NASA Moon Trek WMTS)
+    // We overlay this on top. If tiles fail to load (CORS, offline, API down),
+    // they simply remain transparent, seamlessly revealing the offline image underneath.
+    const trekUrl = 'https://trek.nasa.gov/tiles/Moon/EQ/LRO_WAC_Mosaic_Global_303ppd_v02/1.0.0//default/default028mm/{z}/{y}/{x}.jpg';
+    L.tileLayer(trekUrl, {
+      maxZoom: 6,
+      minZoom: 1,
+      noWrap: true,
+      bounds: BOUNDS,
+      attribution: 'Map data &copy; NASA/GSFC/ASU',
+      errorTileUrl: 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7' // Transparent 1x1 pixel on error
+    }).addTo(map);
 
     // Far Side Overlay
     const farSideStyle = { color: '#ef4444', weight: 0, fillColor: '#ef4444', fillOpacity: 0.25, interactive: false };

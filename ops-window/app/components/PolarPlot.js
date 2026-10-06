@@ -3,10 +3,14 @@
 import { useEffect, useRef, useMemo } from 'react';
 import * as d3 from 'd3';
 
-export default function PolarPlot({ mission }) {
+export default function PolarPlot({ mission, simulatedTime }) {
   const chartRef = useRef(null);
   const renderedIdRef = useRef(null);
   const resizeTimerRef = useRef(null);
+  const scaleRef = useRef(null);
+  
+  const KNOWN_FULL_MOON = new Date('2025-01-13T22:27:00Z').getTime();
+  const LUNAR_MONTH_MS = 29.530588 * 24 * 60 * 60 * 1000;
 
   // Extract only the stable geometric properties that actually affect the plot.
   // This prevents re-renders when computedMetrics change during simulation.
@@ -63,6 +67,8 @@ export default function PolarPlot({ mission }) {
       const elevationScale = d3.scaleLinear()
         .domain([90, -90])
         .range([0, radius]);
+      
+      scaleRef.current = elevationScale;
 
       // Draw Grid Circles
       [0, 15, 30, 45, 60, 75].forEach(elev => {
@@ -215,6 +221,25 @@ export default function PolarPlot({ mission }) {
       drawPath(sunTrack, '#fbbf24', 'rgba(251, 191, 36, 0.8)');
       drawPath(earthTrack, '#2dd4bf', 'rgba(45, 212, 191, 0.8)');
 
+      // Setup Live Indicator Groups
+      const liveGroup = g.append('g').attr('class', 'live-indicators');
+      
+      liveGroup.append('circle')
+        .attr('id', `live-sun-${stableMission.mission_id}`)
+        .attr('r', isLarge ? 7 : 5)
+        .attr('fill', '#fff')
+        .attr('stroke', '#fbbf24')
+        .attr('stroke-width', 2)
+        .style('filter', 'drop-shadow(0 0 12px #fbbf24)');
+
+      liveGroup.append('circle')
+        .attr('id', `live-earth-${stableMission.mission_id}`)
+        .attr('r', isLarge ? 5 : 4)
+        .attr('fill', '#fff')
+        .attr('stroke', '#2dd4bf')
+        .attr('stroke-width', 2)
+        .style('filter', 'drop-shadow(0 0 8px #2dd4bf)');
+
       renderedIdRef.current = stableMission.mission_id;
     };
 
@@ -236,6 +261,77 @@ export default function PolarPlot({ mission }) {
     };
 
   }, [stableMission]);
+
+  // Second effect: purely updates the coordinates of the live indicators without redrawing the chart
+  useEffect(() => {
+    if (!simulatedTime || !stableMission || !scaleRef.current) return;
+    
+    let sunTrack = stableMission.tracks?.sun;
+    let earthTrack = stableMission.tracks?.earth;
+    if (!sunTrack || sunTrack.length < 2) return;
+    
+    // Fallback tracks if none exist (similar to renderChart)
+    if (!earthTrack) {
+        earthTrack = [];
+        const isFarSide = Math.abs(stableMission.lon_east_deg) > 90;
+        if (!isFarSide) {
+           const earthEl = 90 - Math.sqrt(stableMission.lat_deg*stableMission.lat_deg + stableMission.lon_east_deg*stableMission.lon_east_deg);
+           const earthAz = stableMission.lat_deg > 0 ? 180 : 0; 
+           earthTrack.push({ az: earthAz - 5, el: earthEl - 2 }, { az: earthAz + 5, el: earthEl + 2 });
+        } else {
+           earthTrack.push({ az: 0, el: -20 }, { az: 0, el: -20 });
+        }
+    }
+
+    const elapsed = simulatedTime - KNOWN_FULL_MOON;
+    const phase = ((elapsed / LUNAR_MONTH_MS) % 1 + 1) % 1; 
+
+    // Assuming tracks.sun starts at sunrise (which is 0.25 offset from Full Moon noon)
+    const arrayProgress = (phase + 0.25) % 1;
+    
+    const interpolateTrack = (track, progress) => {
+      if (track.length === 1) return track[0];
+      const floatIndex = progress * (track.length - 1);
+      const i0 = Math.floor(floatIndex);
+      const i1 = Math.min(i0 + 1, track.length - 1);
+      const weight = floatIndex - i0;
+      
+      let az0 = track[i0].az, az1 = track[i1].az;
+      // Handle wrap-around for azimuth
+      if (Math.abs(az0 - az1) > 180) {
+        if (az0 < az1) az0 += 360;
+        else az1 += 360;
+      }
+      
+      return {
+        az: (az0 + (az1 - az0) * weight) % 360,
+        el: track[i0].el + (track[i1].el - track[i0].el) * weight
+      };
+    };
+
+    const liveSun = interpolateTrack(sunTrack, arrayProgress);
+    const liveEarth = interpolateTrack(earthTrack, arrayProgress);
+
+    const polarToXY = (az, el) => {
+      const r = scaleRef.current(el);
+      const rad = (az - 90) * Math.PI / 180;
+      return [Math.cos(rad) * r, Math.sin(rad) * r];
+    };
+
+    const [sx, sy] = polarToXY(liveSun.az, liveSun.el);
+    const [ex, ey] = polarToXY(liveEarth.az, liveEarth.el);
+
+    d3.select(`#live-sun-${stableMission.mission_id}`)
+      .attr('cx', sx)
+      .attr('cy', sy)
+      .style('opacity', liveSun.el > 0 ? 1 : 0.3); // Dim when below horizon
+
+    d3.select(`#live-earth-${stableMission.mission_id}`)
+      .attr('cx', ex)
+      .attr('cy', ey)
+      .style('opacity', liveEarth.el > 0 ? 1 : 0.3);
+
+  }, [simulatedTime, stableMission]);
 
   return (
     <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
