@@ -83,10 +83,11 @@ function getTrueNightPolygons(subsolarLon, simulatedTime, offsetDegrees = 0) {
   }
 }
 
-export default function LunarMap({ missions, activeId, onSelect, simulatedTime }) {
+export default function LunarMap({ missions, activeId, onSelect, simulatedTime, isPlanningMode, towers, onAddTower }) {
   const mapRef = useRef(null);
   const mapInstanceRef = useRef(null);
   const markersRef = useRef({});
+  const towersLayerRef = useRef(null);
   
   // Array of polygon refs for the soft penumbra shadow
   const nightPolygonRefs = useRef([]);
@@ -134,6 +135,8 @@ export default function LunarMap({ missions, activeId, onSelect, simulatedTime }
       L.polygon([], { color: '#000', weight: 0, fillColor: '#000', fillOpacity: 0.15, interactive: false }).addTo(map) // Outer Penumbra
     ];
 
+    towersLayerRef.current = L.layerGroup().addTo(map);
+
     map.zoomControl.setPosition('bottomright');
     mapInstanceRef.current = map;
 
@@ -142,6 +145,55 @@ export default function LunarMap({ missions, activeId, onSelect, simulatedTime }
       mapInstanceRef.current = null;
     };
   }, []);
+
+  // Handle map clicks for Planning Mode
+  useEffect(() => {
+    const map = mapInstanceRef.current;
+    if (!map) return;
+    
+    const clickHandler = (e) => {
+      if (isPlanningMode && onAddTower) {
+        let lng = e.latlng.lng % 360;
+        if (lng > 180) lng -= 360;
+        if (lng < -180) lng += 360;
+        onAddTower(e.latlng.lat, lng);
+      }
+    };
+    
+    map.on('click', clickHandler);
+    return () => map.off('click', clickHandler);
+  }, [isPlanningMode, onAddTower]);
+
+  // Render Grid Towers
+  useEffect(() => {
+    const map = mapInstanceRef.current;
+    if (!map || !towersLayerRef.current) return;
+    
+    towersLayerRef.current.clearLayers();
+    if (towers) {
+      towers.forEach(t => {
+        // ~450km radius on the Moon (since Moon radius is 1737km, 15 degrees is roughly 454km)
+        L.circle([t.lat, t.lng], {
+          radius: 454000,
+          color: '#f59e0b',
+          fillColor: '#f59e0b',
+          fillOpacity: 0.15,
+          weight: 1.5,
+          dashArray: '4 6',
+          interactive: false
+        }).addTo(towersLayerRef.current);
+        
+        L.circleMarker([t.lat, t.lng], {
+          radius: 4,
+          color: '#fff',
+          fillColor: '#f59e0b',
+          weight: 1,
+          fillOpacity: 1,
+          interactive: false
+        }).addTo(towersLayerRef.current);
+      });
+    }
+  }, [towers]);
 
   useEffect(() => {
     const map = mapInstanceRef.current;
@@ -184,9 +236,15 @@ export default function LunarMap({ missions, activeId, onSelect, simulatedTime }
       const isSelected = id === activeId;
       const lng = lon180(data.lon_east_deg);
       
+      const inGrid = towers && towers.some(t => {
+        const dLat = data.lat_deg - t.lat;
+        const dLon = lng - t.lng;
+        return Math.sqrt(dLat*dLat + dLon*dLon) <= 15;
+      });
+
       const distToSun = Math.abs(lon180(lng - subsolarLon));
-      const isDaylight = distToSun <= 90;
-      const isEarthLineOfSight = Math.abs(lng) <= 90;
+      const isDaylight = inGrid || distToSun <= 90;
+      const isEarthLineOfSight = inGrid || Math.abs(lng) <= 90;
       const isGoldenZone = isDaylight && isEarthLineOfSight;
       
       let color = isGoldenZone ? '#34d399' : (isDaylight ? '#fbbf24' : '#64748b');

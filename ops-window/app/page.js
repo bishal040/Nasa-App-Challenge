@@ -12,8 +12,20 @@ const KNOWN_FULL_MOON = new Date('2025-01-13T22:27:00Z').getTime();
 const LUNAR_MONTH_MS = 29.530588 * 24 * 60 * 60 * 1000;
 const LUNAR_MONTH_HOURS = 29.530588 * 24;
 
+// Grid Planner Helper (Radius ~ 450km = 15 degrees)
+function hasGridCoverage(latDeg, lonDeg, towers) {
+  if (!towers || towers.length === 0) return false;
+  const TOWER_RADIUS_DEG = 15;
+  for (const tower of towers) {
+    const dLat = latDeg - tower.lat;
+    const dLon = lonDeg - tower.lng;
+    if (Math.sqrt(dLat*dLat + dLon*dLon) <= TOWER_RADIUS_DEG) return true;
+  }
+  return false;
+}
+
 // Calculates static intervals (Gantt chart blocks) for the 60-day timeline window
-function calculateFixedIntervals(latDeg, lonDeg, startTimeMs, durationHours) {
+function calculateFixedIntervals(latDeg, lonDeg, startTimeMs, durationHours, towers) {
   const sunIntervals = [];
   const earthIntervals = [];
   const overlapIntervals = [];
@@ -23,7 +35,8 @@ function calculateFixedIntervals(latDeg, lonDeg, startTimeMs, durationHours) {
 
   const latRad = latDeg * (Math.PI / 180);
   const lonRad = lonDeg * (Math.PI / 180);
-  const isEarthLOS = Math.abs(lonDeg) <= 90;
+  const inGrid = hasGridCoverage(latDeg, lonDeg, towers);
+  const isEarthLOS = inGrid || Math.abs(lonDeg) <= 90;
   
   const stepMs = 60 * 60 * 1000;
 
@@ -38,7 +51,7 @@ function calculateFixedIntervals(latDeg, lonDeg, startTimeMs, durationHours) {
     const sunLatRad = sunLatDeg * (Math.PI / 180);
 
     const cosC = Math.sin(latRad) * Math.sin(sunLatRad) + Math.cos(latRad) * Math.cos(sunLatRad) * Math.cos(lonRad - sunLonRad);
-    const isDaylight = cosC > 0;
+    const isDaylight = inGrid || cosC > 0;
     const isOverlap = isDaylight && isEarthLOS;
 
     if (isDaylight && !inSun) { inSun = true; sunStart = i; }
@@ -59,14 +72,15 @@ function calculateFixedIntervals(latDeg, lonDeg, startTimeMs, durationHours) {
 }
 
 // Calculates live moving metrics (the next 30 days from scrubber point)
-function simulateMissionMetrics(latDeg, lonDeg, startTimeMs) {
+function simulateMissionMetrics(latDeg, lonDeg, startTimeMs, towers) {
   let sunHours = 0;
   let earthHours = 0;
   let opsHours = 0;
 
   const latRad = latDeg * (Math.PI / 180);
   const lonRad = lonDeg * (Math.PI / 180);
-  const isEarthLOS = Math.abs(lonDeg) <= 90;
+  const inGrid = hasGridCoverage(latDeg, lonDeg, towers);
+  const isEarthLOS = inGrid || Math.abs(lonDeg) <= 90;
   if (isEarthLOS) earthHours = LUNAR_MONTH_HOURS;
 
   const stepMs = 60 * 60 * 1000;
@@ -79,8 +93,9 @@ function simulateMissionMetrics(latDeg, lonDeg, startTimeMs) {
     const sunLonDeg = -(phase * 360);
     const sunLatDeg = 1.54 * Math.sin(phase * 2 * Math.PI);
     const cosC = Math.sin(latRad) * Math.sin(sunLatDeg * Math.PI/180) + Math.cos(latRad) * Math.cos(sunLatDeg * Math.PI/180) * Math.cos(lonRad - (sunLonDeg * Math.PI/180));
-    
-    if (cosC > 0) {
+    const isDaylight = inGrid || cosC > 0;
+
+    if (isDaylight) {
       sunHours += 1;
       if (isEarthLOS) opsHours += 1;
     }
@@ -99,7 +114,10 @@ export default function Home() {
   const [rawMissions, setRawMissions] = useState([]);
   const [activeId, setActiveId] = useState(null);
   const [compareId, setCompareId] = useState(null);
+  const [isPlanningMode, setIsPlanningMode] = useState(false);
+  const [towers, setTowers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [isExporting, setIsExporting] = useState(false);
   const [isSkyPathModalOpen, setIsSkyPathModalOpen] = useState(false);
   const [isTimelineModalOpen, setIsTimelineModalOpen] = useState(false);
   
@@ -138,10 +156,10 @@ export default function Home() {
   // Compute fixed intervals for the Timeline chart ONLY ONCE
   const missionsWithIntervals = useMemo(() => {
     return rawMissions.map(m => {
-      const intervals = calculateFixedIntervals(m.lat_deg, m.lon_east_deg, timelineStartMs, timelineDurationHours);
+      const intervals = calculateFixedIntervals(m.lat_deg, m.lon_east_deg, timelineStartMs, timelineDurationHours, towers);
       return { ...m, intervals };
     });
-  }, [rawMissions, timelineStartMs]);
+  }, [rawMissions, timelineStartMs, towers]);
 
   // Extract unique providers for the filter dropdown
   const uniqueProviders = useMemo(() => {
@@ -161,10 +179,10 @@ export default function Home() {
   // Compute live metrics for the active time scrubber position
   const missions = useMemo(() => {
     return filteredMissionsWithIntervals.map(m => {
-      const metrics = simulateMissionMetrics(m.lat_deg, m.lon_east_deg, simulatedTime);
+      const metrics = simulateMissionMetrics(m.lat_deg, m.lon_east_deg, simulatedTime, towers);
       return { ...m, computedMetrics: metrics };
     });
-  }, [filteredMissionsWithIntervals, simulatedTime]);
+  }, [filteredMissionsWithIntervals, simulatedTime, towers]);
 
   const activeMission = missions.find(m => m.mission_id === activeId) || missions[0];
   const compareMission = missions.find(m => m.mission_id === compareId) || null;
@@ -201,17 +219,150 @@ export default function Home() {
   const lunarDay = (lunarPhase * 29.53).toFixed(1);
 
   // Determine live status
-  const isEarthLOS = Math.abs(activeMission.lon_east_deg) <= 90;
+  const inGrid = hasGridCoverage(activeMission.lat_deg, activeMission.lon_east_deg, towers);
+  const isEarthLOS = inGrid || Math.abs(activeMission.lon_east_deg) <= 90;
   const subsolarPhase = ((simulatedTime - KNOWN_FULL_MOON) / LUNAR_MONTH_MS) % 1;
   const subsolarLon = -(subsolarPhase * 360);
   const distToSun = Math.abs(((activeMission.lon_east_deg - subsolarLon) % 360 + 540) % 360 - 180);
-  const isDaylight = distToSun <= 90;
+  const isDaylight = inGrid || distToSun <= 90;
   const isOpsWindow = isDaylight && isEarthLOS;
 
+  const exportBriefing = async () => {
+    if (isExporting) return;
+    setIsExporting(true);
+    try {
+      const html2canvas = (await import('html2canvas')).default;
+
+      // Build an off-screen briefing document
+      const doc = document.createElement('div');
+      doc.style.cssText = 'position:fixed;top:-9999px;left:-9999px;width:1200px;padding:60px;background:#05070a;color:#fff;font-family:ui-monospace,monospace;z-index:99999;';
+
+      const dataDownlink = (metrics.opsHours * 45) > 1000 ? ((metrics.opsHours * 45) / 1024).toFixed(2) + ' TB' : (metrics.opsHours * 45).toFixed(0) + ' GB';
+      const roverTraverse = (metrics.opsHours * 0.12).toFixed(1);
+
+      doc.innerHTML = `
+        <div style="border:1px solid rgba(255,255,255,0.08);border-radius:20px;padding:48px;background:linear-gradient(145deg,#080c12,#0a0e16);">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:40px;">
+            <div>
+              <div style="font-size:11px;letter-spacing:0.3em;color:rgba(255,255,255,0.3);text-transform:uppercase;margin-bottom:8px;">Mission Briefing Report</div>
+              <div style="font-size:36px;font-weight:700;color:#fff;letter-spacing:-0.02em;">${activeMission.mission}</div>
+              <div style="font-size:14px;color:rgba(255,255,255,0.4);margin-top:6px;">${activeMission.site_name} • ${activeMission.provider}</div>
+            </div>
+            <div style="text-align:right;">
+              <div style="font-size:11px;letter-spacing:0.3em;color:rgba(255,255,255,0.3);text-transform:uppercase;margin-bottom:8px;">Generated</div>
+              <div style="font-size:16px;color:#fff;">${formattedDate}</div>
+              <div style="font-size:13px;color:rgba(255,255,255,0.4);">${formattedTime} UTC</div>
+            </div>
+          </div>
+
+          <div style="display:flex;gap:16px;margin-bottom:32px;">
+            <div style="flex:1;background:rgba(0,0,0,0.4);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:20px;">
+              <div style="font-size:10px;letter-spacing:0.2em;color:rgba(52,211,153,0.7);text-transform:uppercase;margin-bottom:6px;">Ops Efficiency</div>
+              <div style="font-size:42px;font-weight:600;color:#34d399;">${metrics.opsEfficiency.toFixed(1)}%</div>
+              <div style="font-size:11px;color:rgba(255,255,255,0.3);margin-top:4px;">${metrics.opsHours.toFixed(0)} / ${LUNAR_MONTH_HOURS.toFixed(0)} hrs</div>
+            </div>
+            <div style="flex:1;background:rgba(0,0,0,0.4);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:20px;">
+              <div style="font-size:10px;letter-spacing:0.2em;color:rgba(251,191,36,0.7);text-transform:uppercase;margin-bottom:6px;">Solar Exposure</div>
+              <div style="font-size:42px;font-weight:600;color:#fbbf24;">${sunPct.toFixed(1)}%</div>
+              <div style="font-size:11px;color:rgba(255,255,255,0.3);margin-top:4px;">${metrics.sunHours.toFixed(0)} hrs sunlight</div>
+            </div>
+            <div style="flex:1;background:rgba(0,0,0,0.4);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:20px;">
+              <div style="font-size:10px;letter-spacing:0.2em;color:rgba(96,165,250,0.7);text-transform:uppercase;margin-bottom:6px;">Earth Comm Link</div>
+              <div style="font-size:42px;font-weight:600;color:#60a5fa;">${earthPct.toFixed(1)}%</div>
+              <div style="font-size:11px;color:rgba(255,255,255,0.3);margin-top:4px;">${metrics.earthHours.toFixed(0)} hrs LOS</div>
+            </div>
+          </div>
+
+          <div style="display:flex;gap:16px;margin-bottom:32px;">
+            <div style="flex:1;background:rgba(0,0,0,0.4);border:1px solid rgba(52,211,153,0.15);border-radius:12px;padding:20px;">
+              <div style="font-size:10px;letter-spacing:0.2em;color:rgba(52,211,153,0.7);text-transform:uppercase;margin-bottom:6px;">Est. Data Downlink</div>
+              <div style="font-size:28px;font-weight:600;color:#fff;">${dataDownlink}</div>
+              <div style="font-size:11px;color:rgba(255,255,255,0.3);margin-top:4px;">@ 100Mbps Ka-Band</div>
+            </div>
+            <div style="flex:1;background:rgba(0,0,0,0.4);border:1px solid rgba(56,189,248,0.15);border-radius:12px;padding:20px;">
+              <div style="font-size:10px;letter-spacing:0.2em;color:rgba(56,189,248,0.7);text-transform:uppercase;margin-bottom:6px;">Est. Rover Traverse</div>
+              <div style="font-size:28px;font-weight:600;color:#fff;">${roverTraverse} km</div>
+              <div style="font-size:11px;color:rgba(255,255,255,0.3);margin-top:4px;">@ 120m/hr driving ops</div>
+            </div>
+          </div>
+
+          <div style="border-top:1px solid rgba(255,255,255,0.06);padding-top:24px;margin-bottom:24px;">
+            <div style="font-size:11px;letter-spacing:0.2em;color:rgba(255,255,255,0.3);text-transform:uppercase;margin-bottom:16px;">Telemetry Parameters</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;">
+              <div style="background:rgba(255,255,255,0.02);border-radius:8px;padding:14px;">
+                <div style="font-size:10px;color:rgba(255,255,255,0.3);text-transform:uppercase;letter-spacing:0.15em;margin-bottom:4px;">Coordinates</div>
+                <div style="font-size:14px;color:#fff;">${activeMission.lat_deg.toFixed(4)}°, ${activeMission.lon_east_deg.toFixed(4)}°</div>
+              </div>
+              <div style="background:rgba(255,255,255,0.02);border-radius:8px;padding:14px;">
+                <div style="font-size:10px;color:rgba(255,255,255,0.3);text-transform:uppercase;letter-spacing:0.15em;margin-bottom:4px;">Landing Date</div>
+                <div style="font-size:14px;color:#fff;">${activeMission.landing_utc.split('T')[0]}</div>
+              </div>
+              <div style="background:rgba(255,255,255,0.02);border-radius:8px;padding:14px;">
+                <div style="font-size:10px;color:rgba(255,255,255,0.3);text-transform:uppercase;letter-spacing:0.15em;margin-bottom:4px;">Mission Era</div>
+                <div style="font-size:14px;color:#fbbf24;">${activeMission.era}</div>
+              </div>
+              <div style="background:rgba(255,255,255,0.02);border-radius:8px;padding:14px;">
+                <div style="font-size:10px;color:rgba(255,255,255,0.3);text-transform:uppercase;letter-spacing:0.15em;margin-bottom:4px;">Status</div>
+                <div style="font-size:14px;color:${activeMission.status === 'success' ? '#34d399' : '#fbbf24'};text-transform:uppercase;">${activeMission.status}</div>
+              </div>
+              <div style="background:rgba(255,255,255,0.02);border-radius:8px;padding:14px;">
+                <div style="font-size:10px;color:rgba(255,255,255,0.3);text-transform:uppercase;letter-spacing:0.15em;margin-bottom:4px;">Ops Duration</div>
+                <div style="font-size:14px;color:#fff;">${activeMission.ops_duration}</div>
+              </div>
+              <div style="background:rgba(255,255,255,0.02);border-radius:8px;padding:14px;">
+                <div style="font-size:10px;color:rgba(255,255,255,0.3);text-transform:uppercase;letter-spacing:0.15em;margin-bottom:4px;">Lunar Day</div>
+                <div style="font-size:14px;color:#fbbf24;">Day ${lunarDay}</div>
+              </div>
+            </div>
+          </div>
+
+          ${towers.length > 0 ? `
+          <div style="border-top:1px solid rgba(255,255,255,0.06);padding-top:24px;margin-bottom:24px;">
+            <div style="font-size:11px;letter-spacing:0.2em;color:rgba(245,158,11,0.7);text-transform:uppercase;margin-bottom:12px;">Grid Infrastructure (${towers.length} Tower${towers.length > 1 ? 's' : ''} Deployed)</div>
+            <div style="display:flex;flex-wrap:wrap;gap:8px;">
+              ${towers.map((t, i) => `<div style="background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.2);border-radius:8px;padding:8px 14px;font-size:12px;color:#f59e0b;">Tower ${i+1}: ${t.lat.toFixed(2)}°, ${t.lng.toFixed(2)}°</div>`).join('')}
+            </div>
+          </div>
+          ` : ''}
+
+          <div style="border-top:1px solid rgba(255,255,255,0.06);padding-top:20px;display:flex;justify-content:space-between;align-items:center;">
+            <div style="font-size:10px;color:rgba(255,255,255,0.2);letter-spacing:0.15em;text-transform:uppercase;">Ops Window • Lunar Coverage Simulator</div>
+            <div style="font-size:10px;color:rgba(255,255,255,0.2);letter-spacing:0.15em;text-transform:uppercase;">Classification: Unclassified // FOUO</div>
+          </div>
+        </div>
+      `;
+
+      document.body.appendChild(doc);
+      const canvas = await html2canvas(doc, { backgroundColor: '#05070a', scale: 2 });
+      document.body.removeChild(doc);
+
+      const link = document.createElement('a');
+      link.download = `OPS_BRIEFING_${activeMission.mission.replace(/\s+/g, '_')}_${formattedDate.replace(/\s+/g, '_')}.png`;
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    } catch (err) {
+      console.error('Export failed:', err);
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const handleAddTower = (lat, lng) => {
+    setTowers(prev => [...prev, { lat, lng }]);
+  };
+
   return (
-    <div className="h-screen w-full flex flex-col selection:bg-sky-500/30 overflow-hidden bg-[#05070a] relative font-sans grain-overlay">
+    <div className={`h-screen w-full flex flex-col selection:bg-sky-500/30 overflow-hidden bg-[#05070a] relative font-sans grain-overlay ${isPlanningMode ? 'cursor-crosshair' : ''}`}>
       <div className="absolute inset-0 z-0">
-        <LunarMap missions={missions} activeId={activeId} onSelect={setActiveId} simulatedTime={simulatedTime} />
+        <LunarMap 
+          missions={missions} 
+          activeId={activeId} 
+          onSelect={setActiveId} 
+          simulatedTime={simulatedTime} 
+          isPlanningMode={isPlanningMode}
+          towers={towers}
+          onAddTower={handleAddTower}
+        />
       </div>
 
       {/* ━━━ TOP NAVIGATION BAR ━━━ */}
@@ -252,9 +403,14 @@ export default function Home() {
               ))}
             </select>
           </div>
+          <div className="w-[1px] h-6 bg-white/10" />
+          <button onClick={() => { setIsPlanningMode(!isPlanningMode); if (isPlanningMode) setTowers([]); }} className={`px-4 py-1.5 rounded-lg flex items-center gap-2 transition-all border outline-none ${isPlanningMode ? 'bg-amber-500/20 border-amber-500/50 text-amber-400 shadow-[0_0_15px_rgba(245,158,11,0.2)]' : 'bg-black/20 border-white/10 text-white/40 hover:text-white hover:border-white/30'}`}>
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4"><path strokeLinecap="round" strokeLinejoin="round" d="M12 21v-8.25M15.75 21v-8.25M8.25 21v-8.25M3 9l9-6 9 6m-1.5 12V10.332A48.36 48.36 0 0012 9.75c-2.551 0-5.056.2-7.5.582V21M3 21h18M12 6.75h.008v.008H12V6.75z" /></svg>
+            <span className="text-xs font-mono tracking-widest">{isPlanningMode ? `GRID MODE ACTIVE (${towers.length})` : 'PLAN GRID'}</span>
+          </button>
         </div>
 
-        {/* Live Clock + Lunar Day */}
+        {/* Live Clock + Lunar Day + Export */}
         <div className="pointer-events-auto glass-panel px-5 py-3.5 rounded-2xl flex items-center gap-5">
           <div className="text-right">
             <div className="text-base font-mono font-semibold text-white tracking-tight">{formattedDate}</div>
@@ -265,6 +421,18 @@ export default function Home() {
             <div className="text-base font-mono font-semibold text-amber-300">Day {lunarDay}</div>
             <div className="text-sm font-mono text-white/40">Lunar Cycle</div>
           </div>
+          <div className="w-[1px] h-8 bg-white/10" />
+          <button 
+            onClick={exportBriefing}
+            disabled={isExporting}
+            className="px-4 py-2 rounded-xl bg-gradient-to-r from-sky-600/20 to-indigo-600/20 border border-sky-500/30 text-sky-400 hover:border-sky-400/50 hover:text-sky-300 hover:shadow-[0_0_20px_rgba(56,189,248,0.15)] transition-all flex items-center gap-2 text-xs font-mono uppercase tracking-widest disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            {isExporting ? (
+              <><div className="w-3.5 h-3.5 border-2 border-sky-400/30 border-t-sky-400 rounded-full" style={{ animation: 'orbit-spin 0.8s linear infinite' }} /><span>Generating...</span></>
+            ) : (
+              <><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4"><path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" /></svg><span>Export Briefing</span></>
+            )}
+          </button>
         </div>
       </nav>
 
@@ -350,6 +518,26 @@ export default function Home() {
             <ProgressBar label="Solar Power" value={metrics.sunHours} pct={sunPct} glowColor="rgba(251,191,36,0.5)" barColor="#fbbf24" textColor="text-amber-400" />
             <ProgressBar label="Earth Link" value={metrics.earthHours} pct={earthPct} glowColor="rgba(96,165,250,0.5)" barColor="#60a5fa" textColor="text-blue-400" />
             <ProgressBar label="Ops Window" value={metrics.opsHours} pct={opsPct} glowColor="rgba(52,211,153,0.5)" barColor="#34d399" textColor="text-emerald-400" />
+          </div>
+
+          {/* Mission Yield Simulator */}
+          <div className="px-5 py-4 border-b border-white/[0.04] bg-gradient-to-br from-black/0 to-emerald-900/10">
+            <div className="flex justify-between items-end mb-3">
+              <div className="text-[11px] font-mono uppercase tracking-[0.2em] text-white/30">Estimated Mission Yield</div>
+              <div className="text-[9px] font-mono uppercase tracking-widest text-emerald-400/50">Simulated</div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="bg-black/40 rounded-lg p-3 border border-white/5 hover:border-emerald-500/20 transition-colors">
+                <div className="text-[10px] font-mono text-emerald-400 uppercase tracking-widest mb-1">Data Downlink</div>
+                <div className="text-xl font-mono text-white">{(metrics.opsHours * 45) > 1000 ? ((metrics.opsHours * 45) / 1024).toFixed(2) + ' TB' : (metrics.opsHours * 45).toFixed(0) + ' GB'}</div>
+                <div className="text-[9px] font-sans text-white/30 mt-1">@ 100Mbps Ka-Band</div>
+              </div>
+              <div className="bg-black/40 rounded-lg p-3 border border-white/5 hover:border-sky-500/20 transition-colors">
+                <div className="text-[10px] font-mono text-sky-400 uppercase tracking-widest mb-1">Rover Traverse</div>
+                <div className="text-xl font-mono text-white">{(metrics.opsHours * 0.12).toFixed(1)} km</div>
+                <div className="text-[9px] font-sans text-white/30 mt-1">@ 120m/hr driving ops</div>
+              </div>
+            </div>
           </div>
 
           {/* Sky Path Overlay */}
@@ -464,8 +652,8 @@ export default function Home() {
                     <HudRow label="Mission Era" value={activeMission.era} valueColor="text-amber-400" mono />
                     <div className="flex justify-between items-center mt-1 pt-3 border-t border-white/5">
                       <span className="text-sm font-mono text-slate-500 uppercase tracking-widest">Earth Link</span>
-                      <span className={`text-sm font-mono px-2.5 py-1 rounded-md ${Math.abs(activeMission.lon_east_deg) <= 90 ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/25' : 'bg-red-500/15 text-red-400 border border-red-500/25'}`}>
-                        {Math.abs(activeMission.lon_east_deg) <= 90 ? 'NOMINAL' : 'BLACKOUT'}
+                      <span className={`text-sm font-mono px-2.5 py-1 rounded-md ${hasGridCoverage(activeMission.lat_deg, activeMission.lon_east_deg, towers) || Math.abs(activeMission.lon_east_deg) <= 90 ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/25' : 'bg-red-500/15 text-red-400 border border-red-500/25'}`}>
+                        {hasGridCoverage(activeMission.lat_deg, activeMission.lon_east_deg, towers) || Math.abs(activeMission.lon_east_deg) <= 90 ? 'NOMINAL' : 'BLACKOUT'}
                       </span>
                     </div>
                   </HudCard>
