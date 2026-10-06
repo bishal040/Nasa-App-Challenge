@@ -98,6 +98,7 @@ function simulateMissionMetrics(latDeg, lonDeg, startTimeMs) {
 export default function Home() {
   const [rawMissions, setRawMissions] = useState([]);
   const [activeId, setActiveId] = useState(null);
+  const [compareId, setCompareId] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isSkyPathModalOpen, setIsSkyPathModalOpen] = useState(false);
   const [isTimelineModalOpen, setIsTimelineModalOpen] = useState(false);
@@ -166,6 +167,7 @@ export default function Home() {
   }, [filteredMissionsWithIntervals, simulatedTime]);
 
   const activeMission = missions.find(m => m.mission_id === activeId) || missions[0];
+  const compareMission = missions.find(m => m.mission_id === compareId) || null;
 
   if (loading || !activeMission) {
     return (
@@ -420,47 +422,99 @@ export default function Home() {
       {isSkyPathModalOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center pointer-events-auto">
           <div className="absolute inset-0 bg-black/85 backdrop-blur-md" onClick={() => setIsSkyPathModalOpen(false)} />
-          <div className="glass-panel p-8 rounded-3xl w-[95vw] max-w-[1100px] h-[85vh] flex flex-col relative animate-fade-slide-up">
+          <div className="glass-panel p-8 rounded-3xl w-[95vw] max-w-[1200px] h-[85vh] flex flex-col relative animate-fade-slide-up">
             <ModalCloseButton onClick={() => setIsSkyPathModalOpen(false)} />
 
-            <div className="mb-6 border-b border-white/[0.06] pb-4">
-              <h2 className="text-3xl font-heading font-semibold text-white tracking-wide">High-Resolution Sky Path</h2>
-              <p className="text-sm font-mono text-white/30 uppercase tracking-widest mt-1">Observer: {activeMission.mission}</p>
+            <div className="mb-6 border-b border-white/[0.06] pb-4 flex items-center justify-between">
+              <div>
+                <h2 className="text-3xl font-heading font-semibold text-white tracking-wide">High-Resolution Sky Path {compareMission && 'Comparison'}</h2>
+                <p className="text-sm font-mono text-white/30 uppercase tracking-widest mt-1">Observer: {activeMission.mission}</p>
+              </div>
+              
+              <div className="flex items-center gap-3 pr-12">
+                <span className="text-sm font-mono uppercase tracking-widest text-white/40">Compare vs:</span>
+                <select 
+                  value={compareId || ''}
+                  onChange={e => setCompareId(e.target.value || null)}
+                  className="bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm text-white outline-none hover:border-sky-500/30 font-sans min-w-[200px] cursor-pointer"
+                >
+                  <option value="" className="text-white/40">Select a mission...</option>
+                  {missions.filter(m => m.mission_id !== activeMission.mission_id).map(m => (
+                    <option key={m.mission_id} value={m.mission_id} className="bg-[#05070a] text-white">
+                      {m.mission} ({m.provider})
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
 
             <div className="flex-1 w-full h-full flex gap-8 overflow-hidden">
-              {/* Left Column: Data HUD */}
-              <div className="w-[320px] flex-shrink-0 flex flex-col gap-4 overflow-y-auto scrollbar-none pr-2">
-                <HudCard title="Telemetry Data" accentColor="sky">
-                  <HudRow label="Coordinates" value={`${activeMission.lat_deg.toFixed(4)}°, ${activeMission.lon_east_deg.toFixed(4)}°`} mono />
-                  <HudRow label="Site Name" value={activeMission.site_name} />
-                  <HudRow label="Landing Date" value={activeMission.landing_utc.split('T')[0]} mono />
-                  <HudRow label="Ops Duration" value={activeMission.ops_duration} noBorder />
-                </HudCard>
+              {/* Left Column: Data HUD (Hidden in comparison mode) */}
+              {!compareMission && (
+                <div className="w-[320px] flex-shrink-0 flex flex-col gap-4 overflow-y-auto scrollbar-none pr-2">
+                  <HudCard title="Telemetry Data" accentColor="sky">
+                    <HudRow label="Coordinates" value={`${activeMission.lat_deg.toFixed(4)}°, ${activeMission.lon_east_deg.toFixed(4)}°`} mono />
+                    <HudRow label="Site Name" value={activeMission.site_name} />
+                    <HudRow label="Landing Date" value={activeMission.landing_utc.split('T')[0]} mono />
+                    <HudRow label="Ops Duration" value={activeMission.ops_duration} noBorder />
+                  </HudCard>
 
-                <HudCard title="Status Array">
-                  <HudRow label="Provider" value={activeMission.provider} bold />
-                  <HudRow label="Mission Era" value={activeMission.era} valueColor="text-amber-400" mono />
-                  <div className="flex justify-between items-center mt-1 pt-3 border-t border-white/5">
-                    <span className="text-sm font-mono text-slate-500 uppercase tracking-widest">Earth Link</span>
-                    <span className={`text-sm font-mono px-2.5 py-1 rounded-md ${Math.abs(activeMission.lon_east_deg) <= 90 ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/25' : 'bg-red-500/15 text-red-400 border border-red-500/25'}`}>
-                      {Math.abs(activeMission.lon_east_deg) <= 90 ? 'NOMINAL' : 'BLACKOUT'}
-                    </span>
+                  <HudCard title="Status Array">
+                    <HudRow label="Provider" value={activeMission.provider} bold />
+                    <HudRow label="Mission Era" value={activeMission.era} valueColor="text-amber-400" mono />
+                    <div className="flex justify-between items-center mt-1 pt-3 border-t border-white/5">
+                      <span className="text-sm font-mono text-slate-500 uppercase tracking-widest">Earth Link</span>
+                      <span className={`text-sm font-mono px-2.5 py-1 rounded-md ${Math.abs(activeMission.lon_east_deg) <= 90 ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/25' : 'bg-red-500/15 text-red-400 border border-red-500/25'}`}>
+                        {Math.abs(activeMission.lon_east_deg) <= 90 ? 'NOMINAL' : 'BLACKOUT'}
+                      </span>
+                    </div>
+                  </HudCard>
+
+                  <HudCard title="Payloads" accentColor="emerald">
+                    <div className="flex flex-wrap gap-1.5">
+                      {activeMission.payloads?.map((p, i) => (
+                        <span key={i} className="px-2.5 py-1.5 rounded-md bg-white/[0.04] border border-white/[0.08] text-sm text-slate-300 font-mono">{p}</span>
+                      ))}
+                    </div>
+                  </HudCard>
+                </div>
+              )}
+
+              {/* Right Column: Polar Plots */}
+              <div className="flex-1 h-full w-full flex gap-6">
+                
+                <div className="flex-1 h-full relative flex flex-col items-center justify-center bg-black/25 rounded-2xl border border-white/[0.04] p-4">
+                  {compareMission && (
+                    <div className="absolute top-5 left-6 right-6 flex justify-between items-start z-10 pointer-events-none">
+                      <div>
+                        <h3 className="text-2xl font-heading text-sky-400 drop-shadow-md">{activeMission.mission}</h3>
+                        <p className="text-xs font-mono text-slate-400 mt-1 uppercase tracking-widest">Primary Observer</p>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-xl font-mono text-white">{activeMission.computedMetrics.opsEfficiency.toFixed(1)}%</div>
+                        <p className="text-xs font-mono text-slate-400 mt-1 uppercase tracking-widest">Ops Efficiency</p>
+                      </div>
+                    </div>
+                  )}
+                  <PolarPlot mission={activeMission} />
+                </div>
+
+                {compareMission && (
+                  <div className="flex-1 h-full relative flex flex-col items-center justify-center bg-black/25 rounded-2xl border border-white/[0.04] p-4 animate-fade-slide-up">
+                    <div className="absolute top-5 left-6 right-6 flex justify-between items-start z-10 pointer-events-none">
+                      <div>
+                        <h3 className="text-2xl font-heading text-amber-400 drop-shadow-md">{compareMission.mission}</h3>
+                        <p className="text-xs font-mono text-slate-400 mt-1 uppercase tracking-widest">Comparison Target</p>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-xl font-mono text-white">{compareMission.computedMetrics.opsEfficiency.toFixed(1)}%</div>
+                        <p className="text-xs font-mono text-slate-400 mt-1 uppercase tracking-widest">Ops Efficiency</p>
+                      </div>
+                    </div>
+                    <PolarPlot mission={compareMission} />
                   </div>
-                </HudCard>
+                )}
 
-                <HudCard title="Payloads" accentColor="emerald">
-                  <div className="flex flex-wrap gap-1.5">
-                    {activeMission.payloads?.map((p, i) => (
-                      <span key={i} className="px-2.5 py-1.5 rounded-md bg-white/[0.04] border border-white/[0.08] text-sm text-slate-300 font-mono">{p}</span>
-                    ))}
-                  </div>
-                </HudCard>
-              </div>
-
-              {/* Right Column: Unobstructed Polar Plot */}
-              <div className="flex-1 h-full w-full relative flex items-center justify-center bg-black/25 rounded-2xl border border-white/[0.04] p-4">
-                <PolarPlot mission={activeMission} />
               </div>
             </div>
           </div>
